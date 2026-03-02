@@ -159,7 +159,11 @@ def ai_bot_response(prompt):
             print(f"Ollama Error: {e}")
 
     # Fallback if everything fails
-    return "I am currently offline. Please check my internet connection or API keys."
+    # Return detailed error for debugging
+    error_msg = "I am currently offline. Errors: "
+    if not settings.get("groq_api_key"): error_msg += "Groq Key Missing. "
+    if not settings.get("gemini_api_key"): error_msg += "Gemini Key Missing. "
+    return error_msg + "Please check Vercel Env Vars."
 
 
 @app.route("/")
