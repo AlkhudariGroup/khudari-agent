@@ -9,13 +9,13 @@ from groq import Groq
 import httpx
 import google.generativeai as genai
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='../templates', static_folder='../static')
 
 import json
 import time
 
 # Load Settings
-SETTINGS_FILE = 'settings.json'
+SETTINGS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'settings.json')
 
 def load_settings():
     try:
