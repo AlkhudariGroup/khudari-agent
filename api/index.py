@@ -19,7 +19,7 @@ DEFAULT_SETTINGS = {
     "agent_name": "e-Commero",
     "wake_words": "e-commero, commerco, commercial, belal, doctor",
     "response_phrase": "Yes Dr. Belal, I am here.",
-    "system_prompt": "", # Empty system prompt for natural Gemini behavior
+    "system_prompt": "You are a helpful AI assistant capable of writing code, solving complex problems, and providing detailed explanations. You are powered by Gemini and Groq.",
     "ollama_model": "llama2-uncensored",
     "ollama_base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
     "providers": {
@@ -28,8 +28,8 @@ DEFAULT_SETTINGS = {
         "ollama": False,
         "groq": True
     },
-    "temperature": 0.5,
-    "max_tokens": 100
+    "temperature": 0.7,
+    "max_tokens": 4096
 }
 
 # In-memory storage for Vercel/Render (since files are read-only)
