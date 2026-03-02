@@ -421,6 +421,32 @@
         }
 
         // --- Speech Synthesis ---
+        function unlockAudio() {
+            // Mobile Safari/Chrome workaround: Play silent buffer on user interaction
+            if (window.audioContext) {
+                const buffer = window.audioContext.createBuffer(1, 1, 22050);
+                const source = window.audioContext.createBufferSource();
+                source.buffer = buffer;
+                source.connect(window.audioContext.destination);
+                source.start(0);
+            } else {
+                // Fallback for older browsers
+                const audio = new Audio();
+                audio.play().catch(() => {});
+            }
+        }
+        
+        // Initialize Audio Context on first interaction
+        window.addEventListener('click', () => {
+            if (!window.audioContext) {
+                window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (window.audioContext.state === 'suspended') {
+                window.audioContext.resume();
+            }
+            unlockAudio();
+        }, { once: true });
+
         function speak(text) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
@@ -453,7 +479,9 @@
         }
 
         // Event Listeners
-        sendBtn.addEventListener('click', handleSend);
+        sendBtn.addEventListener('click', () => { unlockAudio(); handleSend(); });
+        micBtn.addEventListener('click', () => { unlockAudio(); });
+        
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') handleSend();
         });
@@ -467,7 +495,7 @@
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/static/service-worker.js')
+                navigator.serviceWorker.register('/static/sw.js')
                     .then(reg => console.log('SW Registered!', reg))
                     .catch(err => console.log('SW Failed!', err));
             });
