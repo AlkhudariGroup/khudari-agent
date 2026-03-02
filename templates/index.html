@@ -62,17 +62,12 @@
             width: 100vw; height: 100vh;
             object-fit: cover;
             z-index: 0;
-            opacity: 0.6; /* Slight dim by default */
+            opacity: 1.0; /* Full brightness */
         }
 
-        /* Overlay */
+        /* Overlay - Removed/Transparent */
         .overlay {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: radial-gradient(circle at center, transparent 0%, #000 90%);
-            z-index: 1;
-            pointer-events: none;
+            display: none; /* Removed the dark overlay */
         }
 
         /* Main Chat Container */
