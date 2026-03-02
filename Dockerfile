@@ -17,4 +17,5 @@ COPY . .
 
 EXPOSE 5000
 
-ENTRYPOINT ["gunicorn", "-w", "4", "main:app", "--bind", "0.0.0.0:5000"]
+# Updated entrypoint for new folder structure
+ENTRYPOINT ["gunicorn", "-w", "4", "api.index:app", "--bind", "0.0.0.0:5000"]
