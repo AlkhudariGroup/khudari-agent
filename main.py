@@ -20,7 +20,15 @@ SETTINGS_FILE = 'settings.json'
 def load_settings():
     try:
         with open(SETTINGS_FILE, 'r') as f:
-            return json.load(f)
+            data = json.load(f)
+            # Fallback to env vars if empty in file
+            if not data.get("openai_api_key"):
+                data["openai_api_key"] = os.getenv("OPENAI_API_KEY", "")
+            if not data.get("gemini_api_key"):
+                data["gemini_api_key"] = os.getenv("GEMINI_API_KEY", "")
+            if not data.get("groq_api_key"):
+                data["groq_api_key"] = os.getenv("GROQ_API_KEY", "")
+            return data
     except FileNotFoundError:
         return {
             "agent_name": "e-Commero",
