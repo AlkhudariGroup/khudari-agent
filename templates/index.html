@@ -309,7 +309,7 @@
         
         // Settings
         const WAKE_WORDS = "{{ settings.wake_words }}".split(',').map(w => w.trim().toLowerCase());
-        const VOICE_GENDER = "{{ settings.get('voice_gender', 'female') }}";
+        const VOICE_GENDER = "{{ settings.get('voice_gender', 'male') }}"; // Default to Male now
         
         // State
         let isListening = false;
@@ -517,21 +517,23 @@
                 let preferred = null;
                 
                 if (isArabic) {
-                    // Try to find an Arabic voice
+                    // Try to find an Arabic voice (Maged, Tarik, Google Arabic)
                     preferred = voices.find(v => v.lang.includes('ar'));
                 } else {
-                    // English Voice Logic
-                    const isMale = v => v.name.toLowerCase().match(/male|david|daniel|fred/);
-                    const isFemale = v => v.name.toLowerCase().match(/female|samantha|karen|victoria/);
+                    // English Voice Logic (Prefer Male)
+                    const isMale = v => v.name.toLowerCase().match(/male|david|daniel|fred|google uk english male|google us english/);
                     
                     if (VOICE_GENDER === 'male') {
                         preferred = voices.find(isMale) || voices.find(v => v.lang.includes('en'));
                     } else {
-                        preferred = voices.find(isFemale) || voices.find(v => v.lang.includes('en'));
+                        preferred = voices.find(v => v.lang.includes('en')); // Fallback
                     }
                 }
                 
-                if (preferred) utterance.voice = preferred;
+                if (preferred) {
+                    utterance.voice = preferred;
+                    console.log("Selected Voice:", preferred.name, preferred.lang);
+                }
             }
             
             window.speechSynthesis.speak(utterance);
