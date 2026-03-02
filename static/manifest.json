@@ -2,12 +2,13 @@
   "name": "e-Commero AI",
   "short_name": "e-Commero",
   "description": "Your Intelligent AI Assistant for E-Commerce",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#00ffff",
-  "orientation": "portrait",
-  "scope": "/",
+  "theme_color": "#FFC800",
+  "orientation": "any",
+  "categories": ["productivity", "utilities", "business"],
   "icons": [
     {
       "src": "/static/images/icon-192.png",

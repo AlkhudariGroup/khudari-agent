@@ -19,7 +19,7 @@ DEFAULT_SETTINGS = {
     "agent_name": "e-Commero",
     "wake_words": "e-commero, commerco, commercial, belal, doctor",
     "response_phrase": "Yes Dr. Belal, I am here.",
-    "system_prompt": "You are e-Commero, a helpful and intelligent AI assistant. Answer briefly in one sentence.",
+    "system_prompt": "", # Empty system prompt for natural Gemini behavior
     "ollama_model": "llama2-uncensored",
     "ollama_base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
     "providers": {

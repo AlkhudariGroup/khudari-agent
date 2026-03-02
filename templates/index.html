@@ -433,34 +433,45 @@
         }
 
         // --- Speech Synthesis ---
-        function unlockAudio() {
-            // Mobile Safari/Chrome workaround: Play silent buffer on user interaction
-            if (window.audioContext) {
-                const buffer = window.audioContext.createBuffer(1, 1, 22050);
-                const source = window.audioContext.createBufferSource();
-                source.buffer = buffer;
-                source.connect(window.audioContext.destination);
-                source.start(0);
-            } else {
-                // Fallback for older browsers
-                const audio = new Audio();
-                audio.play().catch(() => {});
+        let audioContext = null;
+        let silentSource = null;
+
+        function startSilentAudio() {
+            // Keep Audio Context Alive!
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            // Create a silent buffer source that loops
+            if (!silentSource) {
+                const buffer = audioContext.createBuffer(1, 1, 22050);
+                silentSource = audioContext.createBufferSource();
+                silentSource.buffer = buffer;
+                silentSource.loop = true; // Loop it to keep the engine active!
+                silentSource.connect(audioContext.destination);
+                silentSource.start(0);
             }
         }
         
-        // Initialize Audio Context on first interaction
-        window.addEventListener('click', () => {
-            if (!window.audioContext) {
-                window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function stopSilentAudio() {
+            if (silentSource) {
+                try { silentSource.stop(); } catch(e){}
+                silentSource = null;
             }
-            if (window.audioContext.state === 'suspended') {
-                window.audioContext.resume();
-            }
-            unlockAudio();
-        }, { once: true });
+        }
+        
+        // Initialize Audio on Interaction
+        ['click', 'touchstart', 'touchend'].forEach(evt => 
+            window.addEventListener(evt, () => startSilentAudio(), { once: true })
+        );
 
-        // --- Speech Synthesis ---
         function speak(text) {
+            // Ensure audio context is active
+            startSilentAudio();
+            
             window.speechSynthesis.cancel();
             
             // Check Language of Response
@@ -497,6 +508,7 @@
             
             // Resume listening after speaking
             utterance.onend = () => {
+                // stopSilentAudio(); // Actually, keep it running for better responsiveness
                 if (isAutoMode) {
                     setTimeout(() => {
                         try { recognition.start(); } catch(e){}
@@ -506,8 +518,11 @@
         }
 
         // Event Listeners
-        sendBtn.addEventListener('click', () => { unlockAudio(); handleSend(); });
-        micBtn.addEventListener('click', () => { unlockAudio(); });
+        sendBtn.addEventListener('click', () => { startSilentAudio(); handleSend(); });
+        micBtn.addEventListener('click', () => { startSilentAudio(); });
+        
+        // Ensure Audio starts on touch for mobile
+        micBtn.addEventListener('touchstart', () => { startSilentAudio(); }, {passive: true});
         
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') handleSend();
