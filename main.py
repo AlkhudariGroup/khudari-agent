@@ -57,8 +57,8 @@ def save_settings(new_settings):
 def ai_bot_response(prompt):
     settings = load_settings()
     providers = settings.get("providers", {})
-    temp = float(settings.get("temperature", 0.7))
-    max_tok = int(settings.get("max_tokens", 150))
+    temp = float(settings.get("temperature", 0.5))
+    max_tok = int(settings.get("max_tokens", 100))
     start_time = time.time()
     
     # Priority 1: Groq (Cloud) - Ultra Fast
@@ -67,14 +67,15 @@ def ai_bot_response(prompt):
             print(f"Using Groq Cloud for: {prompt[:30]}...")
             client = Groq(api_key=settings["groq_api_key"])
             response = client.chat.completions.create(
-                model="llama3-8b-8192",  # Switch to Llama 3 8B for extreme speed
+                model="llama3-8b-8192",
                 messages=[
                     {"role": "system", "content": settings.get("system_prompt", "You are a helpful assistant.")},
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=max_tok,
                 temperature=temp,
-                timeout=5.0
+                timeout=5.0,
+                stop=None # Let it finish naturally but keep it short via max_tokens
             )
             duration = time.time() - start_time
             print(f"Groq response in {duration:.2f}s")

@@ -378,21 +378,26 @@
             recognition.onend = () => {
                 isListening = false;
                 micBtn.classList.remove('listening');
-                // Restart if Auto Mode is ON and we are not speaking (TTS)
-                if (isAutoMode && !window.speechSynthesis.speaking) {
+                // Restart if Auto Mode is ON AND we are NOT speaking AND not waiting for AI response
+                const isWaiting = document.querySelector('.message.ai i.fa-beat');
+                if (isAutoMode && !window.speechSynthesis.speaking && !isWaiting) {
                     setTimeout(() => {
                         try { recognition.start(); } catch(e){}
-                    }, 500);
+                    }, 800);
                 }
             };
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                // Prevent duplicate processing if transcript is same as last input within short time
+                
+                // Debounce/Check Duplicate: ignore if identical to current input or just processed
                 if (transcript.trim() === chatInput.value.trim()) return;
                 
+                // Stop recognition immediately to prevent double triggers
+                try { recognition.stop(); } catch(e){}
+
                 chatInput.value = transcript;
-                handleSend(); // Auto-send on voice
+                handleSend(); 
             };
 
             micBtn.addEventListener('click', () => {
@@ -432,7 +437,7 @@
                 if (isAutoMode) {
                     setTimeout(() => {
                         try { recognition.start(); } catch(e){}
-                    }, 500);
+                    }, 800);
                 }
             };
         }
