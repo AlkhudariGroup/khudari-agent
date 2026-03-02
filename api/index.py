@@ -23,11 +23,11 @@ def load_settings():
             data = json.load(f)
             # Fallback to env vars if empty in file
             if not data.get("openai_api_key"):
-                data["openai_api_key"] = os.getenv("OPENAI_API_KEY", "")
+                data["openai_api_key"] = os.getenv("OPENAI_API_KEY", "").strip()
             if not data.get("gemini_api_key"):
-                data["gemini_api_key"] = os.getenv("GEMINI_API_KEY", "")
+                data["gemini_api_key"] = os.getenv("GEMINI_API_KEY", "").strip()
             if not data.get("groq_api_key"):
-                data["groq_api_key"] = os.getenv("GROQ_API_KEY", "")
+                data["groq_api_key"] = os.getenv("GROQ_API_KEY", "").strip()
             return data
     except FileNotFoundError:
         return {
@@ -189,17 +189,27 @@ def dashboard():
 @app.route("/api/settings", methods=["GET", "POST"])
 def settings_api():
     if request.method == "POST":
-        incoming = request.json or {}
-        current = load_settings()
-        if not isinstance(current.get("providers"), dict):
-            current["providers"] = {"openai": True, "gemini": True, "ollama": True}
-        if isinstance(incoming.get("providers"), dict):
-            current["providers"].update(incoming["providers"])
-            incoming.pop("providers", None)
-        current.update(incoming)
-        save_settings(current)
-        return jsonify({"status": "success", "settings": current})
+        try:
+            # On Vercel, we can't write to file, so we just update in memory for this request (futile)
+            # or we return an error. Better to return error or simulate success.
+            return jsonify({"status": "error", "message": "Settings cannot be saved on Vercel (Read-Only filesystem)"}), 400
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
     return jsonify(load_settings())
+
+@app.route("/debug")
+def debug():
+    settings = load_settings()
+    return jsonify({
+        "openai_key_set": bool(settings.get("openai_api_key")),
+        "gemini_key_set": bool(settings.get("gemini_api_key")),
+        "groq_key_set": bool(settings.get("groq_api_key")),
+        "env_openai": bool(os.getenv("OPENAI_API_KEY")),
+        "env_gemini": bool(os.getenv("GEMINI_API_KEY")),
+        "env_groq": bool(os.getenv("GROQ_API_KEY")),
+        "cwd": os.getcwd(),
+        "settings_file_exists": os.path.exists(SETTINGS_FILE)
+    })
 
 def check_openai_status(key: str):
     if not key:
