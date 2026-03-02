@@ -372,13 +372,25 @@
             }
         }
 
+        // --- Language Detection ---
+        function detectLanguage(text) {
+            const arabicPattern = /[\u0600-\u06FF]/;
+            return arabicPattern.test(text) ? 'ar-SA' : 'en-US';
+        }
+
         // --- Speech Recognition ---
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
             recognition.continuous = false;
             recognition.interimResults = false;
-            recognition.lang = 'en-US'; // Default, can auto-switch based on input? No, easier to stick to one or toggle.
+            // Allow recognition to handle multiple languages or default to mixed
+            // Note: Most browsers only support one lang at a time. 
+            // We'll default to 'ar-SA' if user seems to want Arabic, or just let browser decide?
+            // Better strategy: Let user toggle or try 'en-US' by default, but maybe 'ar-SA' is better for your region?
+            // Let's set it to 'ar-SA' as primary if you want Arabic support, or keep 'en-US'.
+            // Actually, let's make it smart: default to user's browser lang
+            recognition.lang = navigator.language || 'en-US'; 
 
             recognition.onstart = () => {
                 isListening = true;
@@ -447,22 +459,37 @@
             unlockAudio();
         }, { once: true });
 
+        // --- Speech Synthesis ---
         function speak(text) {
             window.speechSynthesis.cancel();
+            
+            // Check Language of Response
+            const isArabic = /[\u0600-\u06FF]/.test(text);
+            const lang = isArabic ? 'ar-SA' : 'en-US';
+            
             const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
             
             // Voice Selection Logic
             const voices = window.speechSynthesis.getVoices();
             if (voices.length > 0) {
-                const isMale = v => v.name.toLowerCase().match(/male|david|daniel|fred/);
-                const isFemale = v => v.name.toLowerCase().match(/female|samantha|karen|victoria/);
-                
                 let preferred = null;
-                if (VOICE_GENDER === 'male') {
-                    preferred = voices.find(isMale) || voices.find(v => v.lang.includes('en'));
+                
+                if (isArabic) {
+                    // Try to find an Arabic voice
+                    preferred = voices.find(v => v.lang.includes('ar'));
                 } else {
-                    preferred = voices.find(isFemale) || voices.find(v => v.lang.includes('en'));
+                    // English Voice Logic
+                    const isMale = v => v.name.toLowerCase().match(/male|david|daniel|fred/);
+                    const isFemale = v => v.name.toLowerCase().match(/female|samantha|karen|victoria/);
+                    
+                    if (VOICE_GENDER === 'male') {
+                        preferred = voices.find(isMale) || voices.find(v => v.lang.includes('en'));
+                    } else {
+                        preferred = voices.find(isFemale) || voices.find(v => v.lang.includes('en'));
+                    }
                 }
+                
                 if (preferred) utterance.voice = preferred;
             }
             
