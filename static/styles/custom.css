@@ -1,4 +1,90 @@
-.content {
-  padding-top: 60px;
-  transition: left 0.25s ease;
+:root {
+  --bg-color: #000000;
+  --accent-blue: #00f2ff;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  font-family: 'Cairo', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Background Video */
+.bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: 1;
+}
+
+/* Dim Overlay */
+.dim-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7); /* Darken by 70% */
+  z-index: 2;
+  opacity: 0; /* Hidden by default (Bright) */
+  transition: opacity 1s ease-in-out;
+  pointer-events: none;
+}
+
+.dim-overlay.active {
+  opacity: 1; /* Dimmed */
+}
+
+/* Minimalist Status Indicator */
+.status-indicator {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: transparent;
+  z-index: 10;
+  transition: all 0.3s;
+}
+
+/* Subtitle / Debug Text */
+.subtitle {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 10px 20px;
+  border-radius: 30px;
+  opacity: 0;
+  transition: opacity 0.5s;
+  z-index: 10;
+  pointer-events: none;
+  direction: rtl;
+}
+
+.dashboard-link {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 1.5rem;
+    z-index: 2000;
+    transition: color 0.3s;
+}
+
+.dashboard-link:hover {
+    color: #00f2ff;
 }

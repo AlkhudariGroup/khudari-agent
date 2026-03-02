@@ -1,70 +1,455 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Bot</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles/custom.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/biings-ds@1.60.8/build/bds.css"
-    />
-  </head>
-  <body class="ready sticky">
-    <main>
-      <section class="content">
-        <div class="container is-max-desktop">
-          <h1 class="title is-family-secondary is-size-2-mobile">
-            OpenAI Flask Starter
-          </h1>
-          <p class="subtitle is-family-secondary is-size-5-mobile">
-            A simple starter project to build a chatbot using OpenAI and Flask. Developed by <a href="https://dbr.ai">dbr.ai</a>.
-          </p>
-          <br />
-          <form
-            class="box is-raised has-background-white-bis is-large is-marginless"
-          >
-            <div class="columns is-gapless is-multiline">
-              <div class="column is-12">
-                <div class="field">
-                  <label for="compact1" class="label"
-                    >Ask the bot anything you want.</label
-                  >
-                  <input
-                    id="user-input"
-                    class="input is-primary"
-                    type="text"
-                    placeholder="Type your message here"
-                  />
-                </div>
-              </div>
-            </div>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ settings.agent_name }} - AI Interface</title>
+    
+    <!-- PWA Settings -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#FFC800">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="/static/images/icons/icon.svg">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --accent-color: #FFC800;
+            --accent-glow: rgba(255, 200, 0, 0.3);
+            --glass-bg: rgba(10, 10, 12, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+        }
 
-            <button class="button is-primary" onclick="getBotResponse()">
-              Send
-            </button>
-          </form>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-          <div id="response-box"></div>
+        body {
+            font-family: 'Space Grotesk', 'Cairo', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Background Video */
+        .bg-video {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0.6; /* Slight dim by default */
+        }
+
+        /* Overlay */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, #000 90%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Main Chat Container */
+        .chat-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 900px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .agent-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--glass-bg);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-color);
+            animation: pulse 2s infinite;
+        }
+
+        .dashboard-btn {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .dashboard-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        /* Chat Messages */
+        .messages-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            mask-image: linear-gradient(to bottom, transparent, black 10%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%);
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 14px 20px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 1rem;
+            animation: slideUp 0.3s ease-out;
+            position: relative;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: rgba(255, 200, 0, 0.15);
+            border: 1px solid rgba(255, 200, 0, 0.3);
+            border-bottom-right-radius: 4px;
+            color: #fff;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: rgba(20, 20, 25, 0.7);
+            border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 4px;
+            backdrop-filter: blur(10px);
+            color: #eee;
+        }
+
+        /* Input Area */
+        .input-area {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .mic-btn {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1rem;
+        }
+
+        .mic-btn.listening {
+            background: var(--accent-color);
+            color: #000;
+            box-shadow: 0 0 15px var(--accent-color);
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        .text-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-family: inherit;
+            font-size: 1rem;
+            padding: 8px;
+        }
+
+        .text-input:focus { outline: none; }
+
+        .send-btn {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent-color);
+            color: #000;
+            cursor: pointer;
+            transition: transform 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .send-btn:hover { transform: scale(1.05); }
+        .send-btn:active { transform: scale(0.95); }
+
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(255, 200, 0, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 200, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 200, 0, 0); } }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <!-- Background -->
+    <video id="bg-video" class="bg-video" autoplay muted loop playsinline>
+        <source src="{{ url_for('static', filename='videos/ai_agent_bg.mp4') }}" type="video/mp4">
+        <source src="{{ url_for('static', filename='videos/background.mp4') }}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <!-- UI Layer -->
+    <div class="header">
+        <div class="agent-status">
+            <div class="status-dot"></div>
+            <span style="font-weight: 600; letter-spacing: 0.5px;">{{ settings.agent_name }}</span>
         </div>
-      </section>
-    </main>
+        <a href="/dashboard" class="dashboard-btn">
+            <i class="fas fa-sliders-h"></i> <span style="display: none; @media(min-width: 600px){display:inline;}">Dashboard</span>
+        </a>
+    </div>
+
+    <div class="chat-container">
+        <div class="messages-area" id="messages">
+            <!-- Messages will appear here -->
+            <div class="message ai">
+                Hello Dr. Belal. I am ready to assist with your e-commerce business. How can I help today?
+            </div>
+        </div>
+
+        <div class="input-area">
+            <button id="mic-btn" class="mic-btn" title="Voice Input">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <input type="text" id="chat-input" class="text-input" placeholder="Type or speak..." autocomplete="off">
+            <button id="send-btn" class="send-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
     <script>
-      function getBotResponse() {
-        const userInput = document.getElementById("user-input").value;
-        fetch("/get_response", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_input: userInput }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            document.getElementById("response-box").innerHTML = data.response;
-          });
-      }
+        // DOM Elements
+        const messagesArea = document.getElementById('messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const micBtn = document.getElementById('mic-btn');
+        
+        // Settings
+        const WAKE_WORDS = "{{ settings.wake_words }}".split(',').map(w => w.trim().toLowerCase());
+        const VOICE_GENDER = "{{ settings.get('voice_gender', 'female') }}";
+        
+        // State
+        let isListening = false;
+        let isAutoMode = false; // Auto listening state
+        let recognition;
+
+        // --- Core Logic ---
+        
+        // Auto Listening Toggle Button
+        const header = document.querySelector('.header');
+        const autoBtn = document.createElement('button');
+        autoBtn.className = 'dashboard-btn';
+        autoBtn.innerHTML = '<i class="fas fa-headset"></i> <span style="display:none; @media(min-width:600px){display:inline;}">Auto Mode: OFF</span>';
+        autoBtn.style.marginRight = '10px';
+        autoBtn.onclick = () => {
+            isAutoMode = !isAutoMode;
+            autoBtn.innerHTML = isAutoMode ? 
+                '<i class="fas fa-headset" style="color:var(--accent-color)"></i> Auto Mode: ON' : 
+                '<i class="fas fa-headset"></i> Auto Mode: OFF';
+            
+            if (isAutoMode && !isListening) {
+                try { recognition.start(); } catch(e){}
+            } else if (!isAutoMode && isListening) {
+                recognition.stop();
+            }
+        };
+        // Insert before dashboard button
+        header.insertBefore(autoBtn, header.lastElementChild);
+
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            div.textContent = text;
+            messagesArea.appendChild(div);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        async function handleSend() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            chatInput.value = '';
+            
+            // Show thinking state
+            const loadingId = 'loading-' + Date.now();
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message ai';
+            loadingDiv.id = loadingId;
+            loadingDiv.innerHTML = '<i class="fas fa-ellipsis-h fa-beat"></i>';
+            messagesArea.appendChild(loadingDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+
+            try {
+                const res = await fetch('/get_response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_input: text })
+                });
+                const data = await res.json();
+                
+                // Remove loading
+                document.getElementById(loadingId).remove();
+                
+                addMessage(data.response, 'ai');
+                speak(data.response);
+                
+            } catch (err) {
+                document.getElementById(loadingId).textContent = "Error: Could not connect to AI.";
+            }
+        }
+
+        // --- Speech Recognition ---
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US'; // Default, can auto-switch based on input? No, easier to stick to one or toggle.
+
+            recognition.onstart = () => {
+                isListening = true;
+                micBtn.classList.add('listening');
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                micBtn.classList.remove('listening');
+                // Restart if Auto Mode is ON and we are not speaking (TTS)
+                if (isAutoMode && !window.speechSynthesis.speaking) {
+                    setTimeout(() => {
+                        try { recognition.start(); } catch(e){}
+                    }, 500);
+                }
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                // Prevent duplicate processing if transcript is same as last input within short time
+                if (transcript.trim() === chatInput.value.trim()) return;
+                
+                chatInput.value = transcript;
+                handleSend(); // Auto-send on voice
+            };
+
+            micBtn.addEventListener('click', () => {
+                if (isListening) recognition.stop();
+                else {
+                    try { recognition.start(); } catch(e) { console.log("Recognition start error", e); }
+                }
+            });
+        } else {
+            micBtn.style.display = 'none';
+        }
+
+        // --- Speech Synthesis ---
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Voice Selection Logic
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                const isMale = v => v.name.toLowerCase().match(/male|david|daniel|fred/);
+                const isFemale = v => v.name.toLowerCase().match(/female|samantha|karen|victoria/);
+                
+                let preferred = null;
+                if (VOICE_GENDER === 'male') {
+                    preferred = voices.find(isMale) || voices.find(v => v.lang.includes('en'));
+                } else {
+                    preferred = voices.find(isFemale) || voices.find(v => v.lang.includes('en'));
+                }
+                if (preferred) utterance.voice = preferred;
+            }
+            
+            window.speechSynthesis.speak(utterance);
+            
+            // Resume listening after speaking
+            utterance.onend = () => {
+                if (isAutoMode) {
+                    setTimeout(() => {
+                        try { recognition.start(); } catch(e){}
+                    }, 500);
+                }
+            };
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', handleSend);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+
+        // Initialize Voices
+        window.speechSynthesis.onvoiceschanged = () => {};
+        
+        // Auto-focus
+        chatInput.focus();
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.log('SW Failed!', err));
+            });
+        }
     </script>
-  </body>
+</body>
 </html>

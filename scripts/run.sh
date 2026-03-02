@@ -12,6 +12,8 @@ fi
 
 python -m pip install -r requirements.txt
 
-export $(grep -v '^#' .env | xargs)
+# Load .env variables manually if needed, but python-dotenv in main.py does this too.
+# export $(grep -v '^#' .env | xargs)
 
-gunicorn -w 4 main:app --bind 0.0.0.0:$HTTP_PORT
+# Use waitress for cross-platform production stability (avoids fork issues on macOS)
+python run_waitress.py
