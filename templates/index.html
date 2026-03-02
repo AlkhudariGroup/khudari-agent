@@ -261,9 +261,18 @@
             <div class="status-dot"></div>
             <span style="font-weight: 600; letter-spacing: 0.5px;">{{ settings.agent_name }}</span>
         </div>
-        <a href="/dashboard" class="dashboard-btn">
-            <i class="fas fa-sliders-h"></i> <span style="display: none; @media(min-width: 600px){display:inline;}">Dashboard</span>
-        </a>
+        
+        <div style="display:flex; gap:10px;">
+            <!-- Install Button (Hidden by default) -->
+            <button id="install-btn" class="dashboard-btn" style="display:none; background: var(--accent-color); color: #000; border:none; font-weight:600;">
+                <i class="fas fa-download"></i> Install App
+            </button>
+            
+            <!-- Settings Button -->
+            <a href="/dashboard" class="dashboard-btn" title="Settings">
+                <i class="fas fa-cog"></i> <span style="display: none; @media(min-width: 600px){display:inline;}">Settings</span>
+            </a>
+        </div>
     </div>
 
     <div class="chat-container">
@@ -547,6 +556,35 @@
                     .catch(err => console.log('SW Failed!', err));
             });
         }
+        
+        // --- PWA Install Logic ---
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+            // Update UI to notify the user they can add to home screen
+            installBtn.style.display = 'flex';
+            
+            installBtn.addEventListener('click', () => {
+                // Hide our user interface that shows our A2HS button
+                installBtn.style.display = 'none';
+                // Show the prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the A2HS prompt');
+                    } else {
+                        console.log('User dismissed the A2HS prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            });
+        });
     </script>
 </body>
 </html>
