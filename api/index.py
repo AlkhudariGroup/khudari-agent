@@ -14,45 +14,31 @@ app = Flask(__name__, template_folder='../templates', static_folder='../static')
 import json
 import time
 
-# Load Settings
-SETTINGS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'settings.json')
-
 def load_settings():
-    try:
-        with open(SETTINGS_FILE, 'r') as f:
-            data = json.load(f)
-            # Fallback to env vars if empty in file
-            if not data.get("openai_api_key"):
-                data["openai_api_key"] = os.getenv("OPENAI_API_KEY", "").strip()
-            if not data.get("gemini_api_key"):
-                data["gemini_api_key"] = os.getenv("GEMINI_API_KEY", "").strip()
-            if not data.get("groq_api_key"):
-                data["groq_api_key"] = os.getenv("GROQ_API_KEY", "").strip()
-            return data
-    except FileNotFoundError:
-        return {
-            "agent_name": "e-Commero",
-            "wake_words": "e-commero, commerco, commercial, belal, doctor",
-            "response_phrase": "Yes Dr. Belal, I am here.",
-            "system_prompt": "You are e-Commero, a helpful and intelligent AI assistant. Answer briefly in one sentence.",
-            "ollama_model": "llama2-uncensored",
-            "ollama_base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-            "openai_api_key": os.getenv("OPENAI_API_KEY", ""),
-            "gemini_api_key": os.getenv("GEMINI_API_KEY", ""),
-            "groq_api_key": os.getenv("GROQ_API_KEY", ""),
-            "providers": {
-                "openai": True,
-                "gemini": True,
-                "ollama": True,
-                "groq": False
-            },
-            "temperature": 0.7,
-            "max_tokens": 150
-        }
+    # Force Vercel Friendly Settings
+    return {
+        "agent_name": "e-Commero",
+        "wake_words": "e-commero, commerco, commercial, belal, doctor",
+        "response_phrase": "Yes Dr. Belal, I am here.",
+        "system_prompt": "You are e-Commero, a helpful and intelligent AI assistant. Answer briefly in one sentence.",
+        "ollama_model": "llama2-uncensored",
+        "ollama_base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
+        "openai_api_key": os.getenv("OPENAI_API_KEY", "").strip(),
+        "gemini_api_key": os.getenv("GEMINI_API_KEY", "").strip(),
+        "groq_api_key": os.getenv("GROQ_API_KEY", "").strip(),
+        "providers": {
+            "openai": False,
+            "gemini": True,
+            "ollama": False,
+            "groq": True
+        },
+        "temperature": 0.5,
+        "max_tokens": 100
+    }
 
 def save_settings(new_settings):
-    with open(SETTINGS_FILE, 'w') as f:
-        json.dump(new_settings, f, indent=4)
+    # Do nothing on Vercel
+    pass
 
 def ai_bot_response(prompt):
     settings = load_settings()
@@ -208,7 +194,7 @@ def debug():
         "env_gemini": bool(os.getenv("GEMINI_API_KEY")),
         "env_groq": bool(os.getenv("GROQ_API_KEY")),
         "cwd": os.getcwd(),
-        "settings_file_exists": os.path.exists(SETTINGS_FILE)
+        "is_vercel": True
     })
 
 def check_openai_status(key: str):
