@@ -67,8 +67,9 @@ def ai_bot_response(prompt):
             print(f"Using Groq Cloud for: {prompt[:30]}...")
             client = Groq(api_key=settings["groq_api_key"])
             response = client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama3-8b-8192",  # Switch to Llama 3 8B for extreme speed
                 messages=[
+                    {"role": "system", "content": settings.get("system_prompt", "You are a helpful assistant.")},
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=max_tok,

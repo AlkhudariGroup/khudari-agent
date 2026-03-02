@@ -2,7 +2,7 @@
     "agent_name": "ecommerco ai",
     "wake_words": "ecommerco ai",
     "response_phrase": "Yes Dr. Belal, I am here.",
-    "system_prompt": "You are eCommero .ai helpful and intelligent AI assistant for Dr. Belal. You are professional, friendly, and efficient. You answer in the language the user speaks to you (Arabic or English). Answer briefly in one sentence.",
+    "system_prompt": "You are e-Commero AI, a super-fast assistant for Dr. Belal. Be extremely brief.",
     "ollama_model": "llama2-uncensored",
     "providers": {
         "openai": true,
@@ -14,7 +14,7 @@
     "ollama_base_url": "",
     "openai_api_key": "",
     "voice_gender": "female",
-    "temperature": "1.7",
-    "max_tokens": "2000",
+    "temperature": "0.5",
+    "max_tokens": "100",
     "groq_api_key": ""
 }
