@@ -67,7 +67,7 @@ def ai_bot_response(prompt):
             print(f"Using Groq Cloud for: {prompt[:30]}...")
             client = Groq(api_key=settings["groq_api_key"])
             response = client.chat.completions.create(
-                model="llama3-8b-8192",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": settings.get("system_prompt", "You are a helpful assistant.")},
                     {"role": "user", "content": prompt},
@@ -89,7 +89,7 @@ def ai_bot_response(prompt):
         try:
             print(f"Using Gemini Cloud for: {prompt[:30]}...")
             genai.configure(api_key=settings["gemini_api_key"])
-            model = genai.GenerativeModel('gemini-pro')
+            model = genai.GenerativeModel('gemini-1.5-flash')
             
             # Use raw prompt without system instruction wrapper
             full_prompt = prompt

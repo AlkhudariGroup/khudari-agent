@@ -5,7 +5,7 @@
     "system_prompt": "You are e-Commero AI, a super-fast assistant for Dr. Belal. Be extremely brief.",
     "ollama_model": "llama2-uncensored",
     "providers": {
-        "openai": true,
+        "openai": false,
         "gemini": true,
         "ollama": true,
         "groq": true
