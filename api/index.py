@@ -14,31 +14,40 @@ app = Flask(__name__, template_folder='../templates', static_folder='../static')
 import json
 import time
 
+# Default/Fallback Settings
+DEFAULT_SETTINGS = {
+    "agent_name": "e-Commero",
+    "wake_words": "e-commero, commerco, commercial, belal, doctor",
+    "response_phrase": "Yes Dr. Belal, I am here.",
+    "system_prompt": "You are e-Commero, a helpful and intelligent AI assistant. Answer briefly in one sentence.",
+    "ollama_model": "llama2-uncensored",
+    "ollama_base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
+    "providers": {
+        "openai": False,
+        "gemini": True,
+        "ollama": False,
+        "groq": True
+    },
+    "temperature": 0.5,
+    "max_tokens": 100
+}
+
+# In-memory storage for Vercel/Render (since files are read-only)
+# Note: This resets on restart, but allows runtime changes
+RUNTIME_SETTINGS = DEFAULT_SETTINGS.copy()
+
 def load_settings():
-    # Force Vercel Friendly Settings
-    return {
-        "agent_name": "e-Commero",
-        "wake_words": "e-commero, commerco, commercial, belal, doctor",
-        "response_phrase": "Yes Dr. Belal, I am here.",
-        "system_prompt": "You are e-Commero, a helpful and intelligent AI assistant. Answer briefly in one sentence.",
-        "ollama_model": "llama2-uncensored",
-        "ollama_base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-        "openai_api_key": os.getenv("OPENAI_API_KEY", "").strip(),
-        "gemini_api_key": os.getenv("GEMINI_API_KEY", "").strip(),
-        "groq_api_key": os.getenv("GROQ_API_KEY", "").strip(),
-        "providers": {
-            "openai": False,
-            "gemini": True,
-            "ollama": False,
-            "groq": True
-        },
-        "temperature": 0.5,
-        "max_tokens": 100
-    }
+    # Always inject current Env Vars for security
+    current_settings = RUNTIME_SETTINGS.copy()
+    current_settings["openai_api_key"] = os.getenv("OPENAI_API_KEY", "").strip()
+    current_settings["gemini_api_key"] = os.getenv("GEMINI_API_KEY", "").strip()
+    current_settings["groq_api_key"] = os.getenv("GROQ_API_KEY", "").strip()
+    return current_settings
 
 def save_settings(new_settings):
-    # Do nothing on Vercel
-    pass
+    # Update runtime memory
+    global RUNTIME_SETTINGS
+    RUNTIME_SETTINGS.update(new_settings)
 
 def ai_bot_response(prompt):
     settings = load_settings()
@@ -180,9 +189,10 @@ def dashboard():
 def settings_api():
     if request.method == "POST":
         try:
-            # On Vercel, we can't write to file, so we just update in memory for this request (futile)
-            # or we return an error. Better to return error or simulate success.
-            return jsonify({"status": "error", "message": "Settings cannot be saved on Vercel (Read-Only filesystem)"}), 400
+            incoming = request.json or {}
+            # Update global settings in memory
+            save_settings(incoming)
+            return jsonify({"status": "success", "message": "Settings updated temporarily (Runtime Only)"})
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
     return jsonify(load_settings())
